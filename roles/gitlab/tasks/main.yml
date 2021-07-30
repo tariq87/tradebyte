@@ -1,0 +1,41 @@
+- name: Check if gitlab-runner is installed
+  shell: gitlab-runner --version
+  register: gitlab_cmd_out
+  changed_when: false
+  ignore_errors: true
+  tags:
+  - gitlab_runner
+
+- name: Installing GitLab Runner
+  shell: curl -L --output /usr/local/bin/gitlab-runner https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64
+  tags:
+  - gitlab_runner
+  when: gitlab_cmd_out is failed
+
+- name: Set gitlab-runner file permission
+  file:
+     path: /usr/local/bin/gitlab-runner
+     mode: 0755
+  tags:
+  - gitlab_runner
+
+- name: Create gitlab-ci user
+  ansible.builtin.user:
+     name: gitlab-runner
+     create_home: yes
+     shell: /bin/bash
+     comment: 'GitLab Runner'
+  tags:
+  - gitlab_runner
+
+- name: Install and Run
+  shell: gitlab-runner install --user=root --working-directory=/home/gitlab-runner && gitlab-runner start
+  when: gitlab_cmd_out is failed
+  tags:
+  - gitlab_runner
+
+- name: Register gitlab-runner
+  shell: gitlab-runner register --non-interactive --url https://gitlab.com/ --registration-token '{{ token }}' --description '{{ gitlab_runner_description }}' --tag-list '{{ gitlab_runner_tag | join(",") }}' --executor '{{ gitlab_executor }}'
+  when: gitlab_cmd_out is failed
+  tags:
+  - gitlab_runner

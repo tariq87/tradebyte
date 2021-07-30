@@ -1,0 +1,109 @@
+- name: "Getting docker package key"
+  shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  changed_when: false
+  tags:
+  - kube
+
+- name: "Getting kubernetes package key"
+  shell: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+  changed_when: false
+  tags:
+  - kube
+
+- name: "Getting Helm package key"
+  shell: curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -
+  changed_when: false
+  tags:
+  - kube
+
+- name: "Adding docker repo"
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
+    state: present
+  tags:
+  - kube
+
+- name: "Adding kubernetes repo"
+  apt_repository:
+    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+  tags:
+  - kube
+
+- name: "Adding Helm Repo"
+  apt_repository:
+     repo: deb https://baltocdn.com/helm/stable/debian/ all main
+     state: present
+  tags:
+  - kube
+
+- name: "Update package list"
+  apt:
+    upgrade: yes
+    update_cache: yes
+  tags:
+  - kube
+
+- name: "Installing docker"
+  package: name=docker-ce state=present
+  tags:
+  - kube
+
+- name: "Enable docker service"
+  shell: systemctl enable docker
+  changed_when: false
+  tags:
+  - kube
+
+- name: "Installing transport-https"
+  apt: pkg=apt-transport-https state=present
+  tags:
+  - kube
+
+- name: "Installing kubernetes"
+  apt: name={{item}} state=present
+  with_items:
+    - kubelet
+    - kubeadm
+    - kubectl
+    - selinux-utils
+  tags:
+  - kube
+
+- name: "Reset kubernetes"
+  shell: echo y|kubeadm reset
+  tags:
+    - kube
+
+- name: "Initializing kubernetes"
+  shell: kubeadm init --pod-network-cidr=192.168.0.0/16 
+  tags:
+    - kube
+
+- name: "Configuring kubectl"
+  shell: mkdir -p $HOME/.kube;cp /etc/kubernetes/admin.conf $HOME/.kube/config;chown $(id -u):$(id -g) $HOME/.kube/config
+  tags:
+    - kube
+
+- name: "Configuring kubernetes network"
+  shell: kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml && kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+  tags:
+    - kube
+    - network
+
+- name: "Configuring single node cluster"
+  shell: kubectl taint nodes --all node-role.kubernetes.io/master-
+  tags:
+    - configure
+    - kube
+
+- name: "Creating Kubernetes Namespaces"
+  shell: kubectl create ns staging && kubectl create ns production
+  changed_when: false
+  tags:
+  - kube
+
+- name: "Installing Helm"
+  package: name=helm state=present
+  tags:
+  - kube

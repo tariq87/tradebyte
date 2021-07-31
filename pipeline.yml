@@ -1,0 +1,10 @@
+---
+- hosts: web
+  become: yes
+  vars_files:
+  - vars.yml
+  tasks:
+  - name: Triggering Pipeline for initial deployment
+    shell: curl -X POST -F token={{ pipeline_token }} -F ref=develop https://gitlab.com/api/v4/projects/28439992/trigger/pipeline && curl -X POST -F token={{ pipeline_token }} -F ref=master https://gitlab.com/api/v4/projects/28439992/trigger/pipeline
+    changed_when: false
+

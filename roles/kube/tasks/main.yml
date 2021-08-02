@@ -111,3 +111,8 @@
 - name: "Installing Prometheus"
   shell: helm install prometheus stable/prometheus-operator
   changed_when: false
+
+- name: "Installing Nginx Ingress Controller"
+  shell: helm install ingress-nginx ingress-nginx/ingress-nginx
+  changed_when: false
+

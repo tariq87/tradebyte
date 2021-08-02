@@ -107,3 +107,7 @@
   package: name=helm state=present
   tags:
   - kube
+
+- name: "Installing Prometheus"
+  shell: helm install prometheus stable/prometheus-operator
+  changed_when: false

@@ -113,6 +113,6 @@
   changed_when: false
 
 - name: "Installing Nginx Ingress Controller"
-  shell: helm install ingress-nginx ingress-nginx/ingress-nginx
+  shell: helm install ingress-nginx ingress-nginx/ingress-nginx --set controller.service.type=NodePort
   changed_when: false
 
